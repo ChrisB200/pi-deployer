@@ -77,10 +77,20 @@ def create_dotenv(ports):
             file.write(f"PORT{count}={port}\n")
 
 
+def symlink_nginx():
+    nginx_abs = os.path.join(app, "filled_nginx.conf")
+    available = f"/etc/nginx/sites-available/{args.name}"
+    enabled = f"/etc/nginx/sites-enabled/{args.name}"
+
+    os.symlink(nginx_abs, available)
+    os.symlink(available, enabled)
+
+
 def main():
     os.chdir(app)
     git_pull()
     ports = replace_nginx()
     create_dotenv(ports)
+    symlink_nginx()
 
 main()
