@@ -1,4 +1,5 @@
 import argparse
+import os
 import subprocess
 
 # Pull the github repository that was listed in the actions.
@@ -10,17 +11,18 @@ import subprocess
 # Run the docker compose command within the directory
 # Restart nginx
 
-apps = "~/code/apps"
-conf_location = "/etc/nginx/sites-available"
 
 parser = argparse.ArgumentParser(description="Quick and easy deploy")
 parser.add_argument("--repo", action="store")
 parser.add_argument("--name", action="store")
 
+args = parser.parse_args()
 port_range = (1, 65535)
+app = os.path.expanduser(f"~/code/apps/{args.name}")
+conf_location = "/etc/nginx/sites-available"
 
 
-def find_ports():
+def used_ports():
     command = "ss -tuln | awk '{print $5}' | cut -d':' -f2 | sort -u"
     result = subprocess.run(command, capture_output="True", text=True, shell=True)
     used = []
@@ -32,6 +34,16 @@ def find_ports():
         if line == "Local":
             continue
         used.append(int(line.strip()))
-    print(used)
 
-find_ports()
+    return used
+
+
+def git_pull():
+    os.chdir(app)
+    command = ["git", "pull"]
+    result = subprocess.run(command, capture_output=True, text=True)
+    print(result.stdout)
+
+git_pull()
+
+used_ports()
