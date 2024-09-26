@@ -1,6 +1,7 @@
 import argparse
 import os
 import subprocess
+import random
 
 # Pull the github repository that was listed in the actions.
 # Pull this into the apps folder.
@@ -18,13 +19,14 @@ parser.add_argument("--name", action="store")
 
 args = parser.parse_args()
 port_range = (1, 65535)
-app = os.path.expanduser(f"~/code/apps/{args.name}")
+app = os.path.expanduser(f"~/code/{args.name}")
 conf_location = "/etc/nginx/sites-available"
 
 
 def used_ports():
     command = "ss -tuln | awk '{print $5}' | cut -d':' -f2 | sort -u"
-    result = subprocess.run(command, capture_output="True", text=True, shell=True)
+    result = subprocess.run(
+        command, capture_output="True", text=True, shell=True)
     used = []
     for line in result.stdout.split("\n"):
         if line == "":
@@ -38,12 +40,47 @@ def used_ports():
     return used
 
 
+def get_port():
+    while True:
+        port = random.randint(port_range[0], port_range[1])
+        if port not in used_ports():
+            return port
+
+
 def git_pull():
-    os.chdir(app)
     command = ["git", "pull"]
     result = subprocess.run(command, capture_output=True, text=True)
     print(result.stdout)
 
-git_pull()
 
-used_ports()
+def replace_nginx():
+    new_lines = []
+    ports = []
+    with open("nginx.conf", "r") as file:
+        for line in file.readlines():
+            if "%s" in line:
+                port = get_port()
+                ports.append(port)
+                new_lines.append(line % (port))
+            else:
+                new_lines.append(line)
+
+    with open("filled_nginx.conf", "w") as file:
+        file.writelines(new_lines)
+
+    return ports
+
+
+def create_dotenv(ports):
+    with open(".env", "w") as file:
+        for count, port in enumerate(ports, start=1):
+            file.write(f"PORT{count}={port}\n")
+
+
+def main():
+    os.chdir(app)
+    git_pull()
+    ports = replace_nginx()
+    create_dotenv(ports)
+
+main()
