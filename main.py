@@ -77,12 +77,29 @@ def create_dotenv(ports):
 
 
 def symlink_nginx():
+    # Absolute path to the nginx configuration file
     nginx_abs = os.path.join(app, "filled_nginx.conf")
+    # Path for the available site
     available = f"/etc/nginx/sites-available/{args.name}"
+    # Path for the enabled site
     enabled = f"/etc/nginx/sites-enabled/{args.name}"
 
+    # Check if the available symlink or file exists
+    if os.path.islink(available) or os.path.exists(available):
+        print(f"Removing existing available symlink/file: {available}")
+        os.remove(available)
+
+    # Check if the enabled symlink or file exists
+    if os.path.islink(enabled) or os.path.exists(enabled):
+        print(f"Removing existing enabled symlink/file: {enabled}")
+        os.remove(enabled)
+
+    # Create the new symlinks
     os.symlink(nginx_abs, available)
     os.symlink(available, enabled)
+
+    print(f"Created symlink: {available} -> {nginx_abs}")
+    print(f"Created symlink: {enabled} -> {available}")
 
 
 def restart_nginx():
@@ -93,6 +110,10 @@ def restart_nginx():
         print(f"Failed to reload NGINX: {e}")
 
 
+def run_compose():
+    command = ["docker", "compose", "up"]
+
+
 def main():
     os.chdir(app)
     git_pull()
@@ -100,5 +121,6 @@ def main():
     create_dotenv(ports)
     symlink_nginx()
     restart_nginx()
+
 
 main()
