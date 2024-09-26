@@ -19,14 +19,13 @@ parser.add_argument("--name", action="store")
 
 args = parser.parse_args()
 port_range = (1, 65535)
-app = os.path.expanduser(f"~/code/{args.name}")
+app = os.path.expanduser(f"~/code/hosted/{args.name}")
 conf_location = "/etc/nginx/sites-available"
 
 
 def used_ports():
     command = "ss -tuln | awk '{print $5}' | cut -d':' -f2 | sort -u"
-    result = subprocess.run(
-        command, capture_output="True", text=True, shell=True)
+    result = subprocess.run(command, capture_output="True", text=True, shell=True)
     used = []
     for line in result.stdout.split("\n"):
         if line == "":
@@ -86,11 +85,20 @@ def symlink_nginx():
     os.symlink(available, enabled)
 
 
+def restart_nginx():
+    try:
+        subprocess.run(["sudo", "systemctl", "reload", "nginx"], check=True)
+        print("NGINX reloaded successfully.")
+    except subprocess.CalledProcessError as e:
+        print(f"Failed to reload NGINX: {e}")
+
+
 def main():
     os.chdir(app)
     git_pull()
     ports = replace_nginx()
     create_dotenv(ports)
     symlink_nginx()
+    restart_nginx()
 
 main()
