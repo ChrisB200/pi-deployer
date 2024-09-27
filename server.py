@@ -6,7 +6,7 @@ import os
 app = Flask(__name__)
 CORS(app)
 
-@app.route("/deploy/<string:name>", methods=["POST"])
+@app.route("/<string:name>", methods=["POST"])
 def deploy(name):
     command = ["~/code/pi-deployer/run_script.sh", name]
     subprocess.run(command)
@@ -14,5 +14,3 @@ def deploy(name):
 
 if __name__ == "__main__":
     app.run(debug=True, port=8888)
-
-
