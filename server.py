@@ -8,7 +8,7 @@ CORS(app)
 
 @app.route("/<string:name>", methods=["POST"])
 def deploy(name):
-    command = ["~/code/pi-deployer/run_script.sh", name]
+    command = [os.path.expanduser("~/code/pi-deployer/run_script.sh"), name]
     subprocess.run(command)
     return jsonify("Successfully redeployed"), 200
 
